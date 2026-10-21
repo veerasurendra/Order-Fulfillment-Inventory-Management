@@ -1,0 +1,517 @@
+{
+  "info": {
+    "name": "Order Fulfillment & Inventory Management Platform API",
+    "_postman_id": "c8f258a1-6a4a-4e89-b1d9-81a1793b5a19",
+    "description": "Comprehensive Postman collection for the Order Fulfillment & Inventory Management REST API covering Authentication, RBAC, Products, Warehouses, Inventory Reservations, Orders State Machine, Returns, Notifications, and Dashboard analytics.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000/api",
+      "type": "string"
+    },
+    {
+      "key": "access_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refresh_token",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Authentication",
+      "item": [
+        {
+          "name": "Register Customer",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"customer@example.com\",\n  \"username\": \"customer_jane\",\n  \"password\": \"Password123!\",\n  \"full_name\": \"Jane Customer\",\n  \"role\": \"CUSTOMER\"\n}"
+            },
+            "url": {"raw": "{{base_url}}/auth/register", "host": ["{{base_url}}"], "path": ["auth", "register"]}
+          }
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.success && jsonData.data.access_token) {",
+                  "    pm.collectionVariables.set('access_token', jsonData.data.access_token);",
+                  "    pm.collectionVariables.set('refresh_token', jsonData.data.refresh_token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username_or_email\": \"customer@example.com\",\n  \"password\": \"Password123!\"\n}"
+            },
+            "url": {"raw": "{{base_url}}/auth/login", "host": ["{{base_url}}"], "path": ["auth", "login"]}
+          }
+        },
+        {
+          "name": "Get Current User Profile (/me)",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+            "url": {"raw": "{{base_url}}/auth/me", "host": ["{{base_url}}"], "path": ["auth", "me"]}
+          }
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh_token\": \"{{refresh_token}}\"\n}"
+            },
+            "url": {"raw": "{{base_url}}/auth/refresh", "host": ["{{base_url}}"], "path": ["auth", "refresh"]}
+          }
+        },
+        {
+          "name": "Change Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "Authorization", "value": "Bearer {{access_token}}"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"old_password\": \"Password123!\",\n  \"new_password\": \"NewSecurePass2026!\"\n}"
+            },
+            "url": {"raw": "{{base_url}}/auth/change-password", "host": ["{{base_url}}"], "path": ["auth", "change-password"]}
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh_token\": \"{{refresh_token}}\"\n}"
+            },
+            "url": {"raw": "{{base_url}}/auth/logout", "host": ["{{base_url}}"], "path": ["auth", "logout"]}
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Products",
+      "item": [
+        {
+          "name": "Create Product (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "Authorization", "value": "Bearer {{access_token}}"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sku\": \"SKU-HEADPHONES-01\",\n  \"name\": \"Wireless Noise-Canceling Headphones\",\n  \"description\": \"Premium studio headphones\",\n  \"price\": 199.99,\n  \"cost_price\": 110.00,\n  \"status\": \"ACTIVE\"\n}"
+            },
+            "url": {"raw": "{{base_url}}/products", "host": ["{{base_url}}"], "path": ["products"]}
+          }
+        },
+        {
+          "name": "List Products",
+          "request": {
+            "method": "GET",
+            "url": {"raw": "{{base_url}}/products?page=1&page_size=20", "host": ["{{base_url}}"], "path": ["products"]}
+          }
+        },
+        {
+          "name": "Get Product by ID",
+          "request": {
+            "method": "GET",
+            "url": {"raw": "{{base_url}}/products/1", "host": ["{{base_url}}"], "path": ["products", "1"]}
+          }
+        },
+        {
+          "name": "Update Product (Admin)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "Authorization", "value": "Bearer {{access_token}}"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"price\": 219.99\n}"
+            },
+            "url": {"raw": "{{base_url}}/products/1", "host": ["{{base_url}}"], "path": ["products", "1"]}
+          }
+        },
+        {
+          "name": "Deactivate Product (Admin)",
+          "request": {
+            "method": "PATCH",
+            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+            "url": {"raw": "{{base_url}}/products/1/deactivate", "host": ["{{base_url}}"], "path": ["products", "1", "deactivate"]}
+          }
+        },
+        {
+          "name": "Activate Product (Admin)",
+          "request": {
+            "method": "PATCH",
+            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+            "url": {"raw": "{{base_url}}/products/1/activate", "host": ["{{base_url}}"], "path": ["products", "1", "activate"]}
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Warehouses",
+      "item": [
+        {
+          "name": "Create Warehouse (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "Authorization", "value": "Bearer {{access_token}}"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"West Regional Logistics Center\",\n  \"location\": \"Reno, NV\",\n  \"capacity\": 30000,\n  \"status\": \"ACTIVE\"\n}"
+            },
+            "url": {"raw": "{{base_url}}/warehouses", "host": ["{{base_url}}"], "path": ["warehouses"]}
+          }
+        },
+        {
+          "name": "List Warehouses",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+            "url": {"raw": "{{base_url}}/warehouses", "host": ["{{base_url}}"], "path": ["warehouses"]}
+          }
+        },
+        {
+          "name": "Assign User to Warehouse (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "Authorization", "value": "Bearer {{access_token}}"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": 2\n}"
+            },
+            "url": {"raw": "{{base_url}}/warehouses/1/users", "host": ["{{base_url}}"], "path": ["warehouses", "1", "users"]}
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Inventory",
+      "item": [
+        {
+          "name": "List Inventory",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+            "url": {"raw": "{{base_url}}/inventory?warehouse_id=1", "host": ["{{base_url}}"], "path": ["inventory"]}
+          }
+        },
+        {
+          "name": "Get Low Stock Items",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+            "url": {"raw": "{{base_url}}/inventory/low-stock", "host": ["{{base_url}}"], "path": ["inventory", "low-stock"]}
+          }
+        },
+        {
+          "name": "Adjust Stock (Idempotent)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "Authorization", "value": "Bearer {{access_token}}"},
+              {"key": "Idempotency-Key", "value": "adj-uuid-0001"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"product_id\": 1,\n  \"warehouse_id\": 1,\n  \"adjustment_type\": \"INCREASE\",\n  \"quantity\": 50,\n  \"reason\": \"Received supplier manifest\"\n}"
+            },
+            "url": {"raw": "{{base_url}}/inventory/adjust", "host": ["{{base_url}}"], "path": ["inventory", "adjust"]}
+          }
+        },
+        {
+          "name": "Transfer Stock Between Warehouses (Atomic Dual-Tx)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "Authorization", "value": "Bearer {{access_token}}"},
+              {"key": "Idempotency-Key", "value": "trf-uuid-0001"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"source_warehouse_id\": 1,\n  \"destination_warehouse_id\": 2,\n  \"product_id\": 1,\n  \"quantity\": 15,\n  \"reason\": \"Rebalance seasonal inventory\"\n}"
+            },
+            "url": {"raw": "{{base_url}}/inventory/transfer", "host": ["{{base_url}}"], "path": ["inventory", "transfer"]}
+          }
+        },
+        {
+          "name": "List Inventory Transactions",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+            "url": {"raw": "{{base_url}}/inventory/transactions?product_id=1", "host": ["{{base_url}}"], "path": ["inventory", "transactions"]}
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Orders",
+      "item": [
+        {
+          "name": "Create Order (Idempotent with Row Lock)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "Authorization", "value": "Bearer {{access_token}}"},
+              {"key": "Idempotency-Key", "value": "order-uuid-9901"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"warehouse_id\": 1,\n  \"items\": [\n    {\"product_id\": 1, \"quantity\": 2, \"discount\": 0.00}\n  ],\n  \"notes\": \"Standard delivery requested\"\n}"
+            },
+            "url": {"raw": "{{base_url}}/orders", "host": ["{{base_url}}"], "path": ["orders"]}
+          }
+        },
+        {
+          "name": "List Orders",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+            "url": {"raw": "{{base_url}}/orders?page=1&page_size=20", "host": ["{{base_url}}"], "path": ["orders"]}
+          }
+        },
+        {
+          "name": "Get Order by ID",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+            "url": {"raw": "{{base_url}}/orders/1", "host": ["{{base_url}}"], "path": ["orders", "1"]}
+          }
+        },
+        {
+          "name": "Process Payment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "Authorization", "value": "Bearer {{access_token}}"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"payment_method\": \"CREDIT_CARD\"\n}"
+            },
+            "url": {"raw": "{{base_url}}/orders/1/payment", "host": ["{{base_url}}"], "path": ["orders", "1", "payment"]}
+          }
+        },
+        {
+          "name": "Assign Order (Manager)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "Authorization", "value": "Bearer {{access_token}}"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"agent_id\": 3,\n  \"notes\": \"Priority packing\"\n}"
+            },
+            "url": {"raw": "{{base_url}}/orders/1/assign", "host": ["{{base_url}}"], "path": ["orders", "1", "assign"]}
+          }
+        },
+        {
+          "name": "Fulfillment: Start Processing",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+            "url": {"raw": "{{base_url}}/orders/1/start-processing", "host": ["{{base_url}}"], "path": ["orders", "1", "start-processing"]}
+          }
+        },
+        {
+          "name": "Fulfillment: Pack Order",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+            "url": {"raw": "{{base_url}}/orders/1/pack", "host": ["{{base_url}}"], "path": ["orders", "1", "pack"]}
+          }
+        },
+        {
+          "name": "Fulfillment: Ship Order",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+            "url": {"raw": "{{base_url}}/orders/1/ship", "host": ["{{base_url}}"], "path": ["orders", "1", "ship"]}
+          }
+        },
+        {
+          "name": "Fulfillment: Deliver Order",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+            "url": {"raw": "{{base_url}}/orders/1/deliver", "host": ["{{base_url}}"], "path": ["orders", "1", "deliver"]}
+          }
+        },
+        {
+          "name": "Cancel Order (Transactional Stock Release)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "Authorization", "value": "Bearer {{access_token}}"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Changed mind before fulfillment\"\n}"
+            },
+            "url": {"raw": "{{base_url}}/orders/1/cancel", "host": ["{{base_url}}"], "path": ["orders", "1", "cancel"]}
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. Returns",
+      "item": [
+        {
+          "name": "Request Return (Customer)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "Authorization", "value": "Bearer {{access_token}}"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"order_id\": 1,\n  \"reason\": \"Item defective on arrival\",\n  \"items\": [\n    {\"product_id\": 1, \"quantity\": 1, \"condition\": \"GOOD\"}\n  ]\n}"
+            },
+            "url": {"raw": "{{base_url}}/returns", "host": ["{{base_url}}"], "path": ["returns"]}
+          }
+        },
+        {
+          "name": "List Returns",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+            "url": {"raw": "{{base_url}}/returns", "host": ["{{base_url}}"], "path": ["returns"]}
+          }
+        },
+        {
+          "name": "Approve Return",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "Authorization", "value": "Bearer {{access_token}}"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"APPROVED\",\n  \"admin_notes\": \"Return merchandise authorization granted\"\n}"
+            },
+            "url": {"raw": "{{base_url}}/returns/1/status", "host": ["{{base_url}}"], "path": ["returns", "1", "status"]}
+          }
+        },
+        {
+          "name": "Receive Return (Restock Inventory)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "Authorization", "value": "Bearer {{access_token}}"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"RECEIVED\",\n  \"admin_notes\": \"Item inspected and returned to available stock\"\n}"
+            },
+            "url": {"raw": "{{base_url}}/returns/1/status", "host": ["{{base_url}}"], "path": ["returns", "1", "status"]}
+          }
+        }
+      ]
+    },
+    {
+      "name": "7. Notifications & Audit Logs",
+      "item": [
+        {
+          "name": "List Notifications",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+            "url": {"raw": "{{base_url}}/notifications", "host": ["{{base_url}}"], "path": ["notifications"]}
+          }
+        },
+        {
+          "name": "Mark All Notifications Read",
+          "request": {
+            "method": "PATCH",
+            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+            "url": {"raw": "{{base_url}}/notifications/read-all", "host": ["{{base_url}}"], "path": ["notifications", "read-all"]}
+          }
+        },
+        {
+          "name": "List Audit Logs (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+            "url": {"raw": "{{base_url}}/audit-logs?page=1&page_size=20", "host": ["{{base_url}}"], "path": ["audit-logs"]}
+          }
+        }
+      ]
+    },
+    {
+      "name": "8. Dashboards",
+      "item": [
+        {
+          "name": "Admin Dashboard",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+            "url": {"raw": "{{base_url}}/dashboard/admin", "host": ["{{base_url}}"], "path": ["dashboard", "admin"]}
+          }
+        },
+        {
+          "name": "Warehouse Manager Dashboard",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+            "url": {"raw": "{{base_url}}/dashboard/warehouse-manager?warehouse_id=1", "host": ["{{base_url}}"], "path": ["dashboard", "warehouse-manager"]}
+          }
+        },
+        {
+          "name": "Customer Dashboard",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+            "url": {"raw": "{{base_url}}/dashboard/customer", "host": ["{{base_url}}"], "path": ["dashboard", "customer"]}
+          }
+        }
+      ]
+    }
+  ]
+}
